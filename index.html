@@ -511,7 +511,7 @@ footer a{padding:2px 4px}
           </div>
         </div>
         <input type="hidden" id="selectedCar" name="selectedCar" value="">
-        <input type="text" name="website" id="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);opacity:0;pointer-events:none">
+        <input type="text" name="hp_k9x" id="hp_k9x" tabindex="-1" autocomplete="one-time-code" data-lpignore="true" data-form-type="other" aria-hidden="true" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);opacity:0;pointer-events:none">
                 <button class="btn submit-btn" type="submit">تأكيد الطلب ✅</button>
         <div id="formStatus" class="status" role="status" aria-live="polite">
           <strong id="statusTitle"></strong>
@@ -533,6 +533,7 @@ footer a{padding:2px 4px}
 <div class="sticky-cta"><a id="stickyCta" href="#choose-car"><span>اطلب الآن — <bdi dir="ltr">12&nbsp;500</bdi> دج شامل التوصيل</span></a></div>
 <!-- META PIXEL: colle ici ton code Pixel de base (fbq('init', ...); fbq('track','PageView')). L'événement Lead est déjà déclenché à l'envoi. -->
 <script>
+var DEBUG = new URLSearchParams(window.location.search).get('debug') === '1';
 var TEST_MODE = new URLSearchParams(window.location.search).get('test') === '1';
 if (TEST_MODE) {
   var testBanner = document.getElementById('testModeBanner');
@@ -754,7 +755,7 @@ document.getElementById('orderForm').addEventListener('submit', function(event) 
 
   var f = form.elements;
   /* Anti-robots : champ piège rempli, ou formulaire envoyé en moins de 2,5 s après l'ouverture */
-  if (f.website.value || Date.now() - PAGE_START < 2500) { showStatus(true, 'تم إرسال الطلب للتأكيد ✅', 'سنتصل بك قريبًا لتأكيد التفاصيل.'); return; }
+  if (f.hp_k9x.value && f.hp_k9x.value.length > 0 && f.hp_k9x.value.indexOf('http') === 0) { showStatus(true, 'تم إرسال الطلب للتأكيد ✅', 'سنتصل بك قريبًا لتأكيد التفاصيل.'); return; }
 
   var qty = Math.min(20, Math.max(1, parseInt(toAscii(f.qty.value), 10) || 1));
   var params = new URLSearchParams(location.search);
@@ -810,8 +811,12 @@ document.getElementById('orderForm').addEventListener('submit', function(event) 
     resetAfterOrder('تم إرسال الطلب ✅');
     submitting = false;
     sendWithRetry(data, 60000, null).then(
-      function(st) { if (st === 'confirmed') qRemove(data.orderId); else qMark(data.orderId); },
+      function(st) {
+        if (DEBUG) showStatus(st === 'confirmed', 'DEBUG : ' + st, st === 'confirmed' ? 'Google a confirmé la réception.' : 'Envoyé sans réponse lisible (no-cors).');
+        if (st === 'confirmed') qRemove(data.orderId); else qMark(data.orderId);
+      },
       function(err) {
+        if (DEBUG) showStatus(false, 'DEBUG : échec', String(err && (err.name + ' ' + err.message)));
         if (err && err.permanent) {
           qRemove(data.orderId);
           showStatus(false, 'تعذّر تسجيل الطلب', 'تحقق من بياناتك وأعد المحاولة، أو اتصل بنا على 0783283625.');
